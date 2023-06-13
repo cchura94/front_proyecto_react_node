@@ -1,23 +1,37 @@
 import { useState } from "react"
 import axios from "axios"
 import authService from "../services/authService"
+import { useNavigate } from "react-router-dom"
 
 const Login = () => {
     // estados o variable (hooks de de react)
     const [titulo, setTitulo] = useState("LOGIN")
     const [email, setEmail] = useState("")
     const [password, setClave] = useState("")
+    // habiltamos hook useNavigate
+    const navigate = useNavigate()
     // funciones o metodos
     const funLogin = async (e) => {
         e.preventDefault()
 
-        const user = {email, password}
-        console.log(user)
+        try {
+            const user = {email, password}
+            console.log(user)
 
-        // peticion al servidor de node
-        const {data} = await authService.loginConNode(user);// .then(res => console.log(res))
-        console.log(data);
-        // axios.post("http://127.0.0.1:3000/api/auth/login", user).then(res => console.log(res))
+            // peticion al servidor de node
+            const {data} = await authService.loginConNode(user);// .then(res => console.log(res))
+            console.log(data);
+
+            localStorage.setItem("access_token", data.access_token)
+
+            navigate("/admin/categoria")
+            // axios.post("http://127.0.0.1:3000/api/auth/login", user).then(res => console.log(res))
+            
+            
+        } catch (error) {
+            console.log(error.response.data)
+            alert(error.response.data.message)
+        }        
     }
     // retornar el html
     return (
