@@ -3,6 +3,7 @@ import clienteService from "../../../services/clienteService"
 import Modal from "../../../components/Modal"
 import productoService from "../../../services/productoService"
 import TablePagination from "../../../components/TablePagination"
+import pedidoService from "../../../services/pedidoService"
 
 const PedidoNuevo = () => {
     const [cliente, setCliente] = useState({ nombre_completo: "", correo: "", ci_nit: "", telefono: "" })
@@ -21,6 +22,12 @@ const PedidoNuevo = () => {
     const [total, setTotal] = useState(0)
     const [q, setq] = useState('')
     const [productos, setProductos] = useState([])
+
+    // carrito
+    const [carrito, setCarrito] = useState([])
+    // cliente
+    const [buscar, setBuscar] = useState("")
+    const [cliente_seleccionado, setClienteSeleccionado] = useState(null)
 
     useEffect(() => {
         getProductos()
@@ -41,7 +48,8 @@ const PedidoNuevo = () => {
     const funGuardar = async (e) => {
         e.preventDefault();
         try {
-            await clienteService.guardar(cliente)
+            const { data } = await pedidoService.nuevoCliente(cliente)
+            setClienteSeleccionado(data.cliente)
             resetData()
 
         } catch (error) {
@@ -59,8 +67,54 @@ const PedidoNuevo = () => {
         setProductos(data.rows)
     }
 
-    const handleAddCarrito = () => {
-        
+    const handleAddCarrito = (prod) => {
+        console.log(prod)
+        let temp = [...carrito];
+        var foundIndex = temp.findIndex(x => x.productoId == prod.id);
+        console.log(foundIndex)
+        if(foundIndex == -1){
+            const item = { productoId: prod.id, nombre: prod.nombre, cantidad: 1, precio: prod.precio }
+            setCarrito([...carrito, item])
+        }
+    }
+    const quitarCarrito = (pos) => {
+
+        const temp = [...carrito];
+
+        // removing the element using splice
+        temp.splice(pos, 1);
+
+        // updating the list
+        setCarrito(temp);
+
+    }
+    const funBuscarCliente = async (e) => {
+        e.preventDefault();
+
+        console.log(buscar)
+        const { data } = await pedidoService.buscarCliente(buscar);
+        console.log(data)
+        setClienteSeleccionado(data)
+
+    }
+
+    const funGuardarPedido = async () => {
+        if(confirm("¿Está Seguro de Guarar El Pedido?")){
+            try {
+                const datos = {
+                    clienteId: cliente_seleccionado.id,
+                    items: carrito
+                }
+
+                const {data} = await pedidoService.guardar(datos);
+                if(data.pedido){
+                    // redireccion
+                }
+                
+            } catch (error) {
+                alert("Ocurrio un error al registrar el pedido");
+            }
+        }
     }
 
     return (
@@ -72,8 +126,6 @@ const PedidoNuevo = () => {
 
                             <TablePagination columnas={columnas} datos={productos} total={total} page={page} fetchData={getProductos} handleAddCarrito={handleAddCarrito}></TablePagination>
                         </div>
-
-
 
                     </div>
                 </div>
@@ -89,27 +141,56 @@ const PedidoNuevo = () => {
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                <tr>
-                                    <td className="py-2 px-4 text-sm text-gray-500"></td>
-                                    <td></td>
-                                    <td></td>
-                                </tr>
+                                {carrito.map((prod, index) => (
+                                    <tr key={index}>
+                                        <td className="py-2 px-4 text-sm text-gray-500">{prod.nombre}</td>
+                                        <td className="py-2 px-4 text-sm text-gray-500">{prod.cantidad}</td>
+                                        <td className="py-2 px-4 text-sm text-gray-500">{prod.precio}</td>
+                                        <td className="py-2 px-4 text-sm text-gray-500">
+                                            <button className="py-1 px-2 bg-red-500 text-white hover:bg-red-600 rounded" onClick={() => quitarCarrito(index)}>
+                                                x
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))
+                                }
                             </tbody>
 
                         </table>
                     </div>
                     <div className="bg-white p-4 rounded shadow">
-                        <input
-                            type="search"
-                            name="buscar"
-                            className="border border-gray-300 rounded px-2 py-1 mb-2"
-                        />
+                        <form onSubmit={(e) => funBuscarCliente(e)}>
+                            <input
+                                type="search"
+                                name="buscar"
+                                className="border border-gray-300 rounded px-2 py-1 mb-2"
+                                onChange={(e) => setBuscar(e.target.value)}
+                                required
+                            />
+                            <input type="submit" value="buscar" />
+                        </form>
                         <button className="py-1 px-2 bg-blue-500 text-white hover:bg-blue-600 rounded" onClick={() => setOpenModal(!modalOpen)}>
                             NUEVO CLIENTE
                         </button>
+                        {cliente_seleccionado && (
+
+                            <div class="bg-indigo-500 text-white font-bold rounded-lg border shadow-lg p-2">
+
+                                CLIENTE: {cliente_seleccionado?.nombre_completo}
+                                <hr />
+                                CI/NIT: {cliente_seleccionado?.ci_nit}
+                                <hr />
+                                TELEFONO: {cliente_seleccionado?.telefono}
+                                <hr />
+                                CORREO: {cliente_seleccionado?.correo}
+                            </div>
+                        )}
                     </div>
                     <div className="bg-white p-4 rounded shadow">
-                        <h1>Pedido</h1>
+                        <h1>Registro pedido</h1>
+                        <button className="py-1 px-2 bg-blue-500 text-white hover:bg-blue-600 rounded" onClick={() => funGuardarPedido()}>
+                            Guardar Pedido
+                        </button>
                     </div>
 
                 </div>
@@ -125,8 +206,32 @@ const PedidoNuevo = () => {
                         onChange={handleChange}
                         className="border border-gray-300 rounded px-2 py-1 mb-2 w-full"
                     />
+                    <label>CI / NIT</label>
+                    <input
+                        type="text"
+                        name="ci_nit"
+                        value={cliente.ci_nit}
+                        onChange={handleChange}
+                        className="border border-gray-300 rounded px-2 py-1 mb-2 w-full"
+                    />
+                    <label>CORREO</label>
+                    <input
+                        type="email"
+                        name="correo"
+                        value={cliente.correo}
+                        onChange={handleChange}
+                        className="border border-gray-300 rounded px-2 py-1 mb-2 w-full"
+                    />
+                    <label>Telefono</label>
+                    <input
+                        type="text"
+                        name="telefono"
+                        value={cliente.telefono}
+                        onChange={handleChange}
+                        className="border border-gray-300 rounded px-2 py-1 mb-2 w-full"
+                    />
 
-                    <input type="submit" className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 mr-2 rounded" />
+                    <input type="submit" value="Guardar" className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 mr-2 rounded" />
                 </form>
 
             </Modal>

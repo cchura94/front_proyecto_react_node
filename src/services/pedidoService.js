@@ -13,12 +13,12 @@ const pedidoService = {
         return api.get(`/pedido/${id}`)
     },
 
-    modificar: (id, datos) => {
-        return api.put(`/pedido/${id}`, datos)
+    buscarCliente: (buscar) => {
+        return api.get(`/pedido/buscar-cliente?buscar=${buscar}`)
     },
 
-    eliminar: (id) => {
-        return api.delete(`/pedido/${id}`)
+    nuevoCliente: (cliente) => {
+        return api.post(`/pedido/nuevo-cliente`, cliente)
     }
 }
 
