@@ -72,7 +72,7 @@ const PedidoNuevo = () => {
         let temp = [...carrito];
         var foundIndex = temp.findIndex(x => x.productoId == prod.id);
         console.log(foundIndex)
-        if(foundIndex == -1){
+        if (foundIndex == -1) {
             const item = { productoId: prod.id, nombre: prod.nombre, cantidad: 1, precio: prod.precio }
             setCarrito([...carrito, item])
         }
@@ -88,6 +88,27 @@ const PedidoNuevo = () => {
         setCarrito(temp);
 
     }
+    const handleInc = (pos) => {
+        const temp = [...carrito];
+
+        temp[pos].cantidad++;
+
+        // updating the list
+        setCarrito(temp);
+    };
+
+    const handleDec = (pos) => {
+        const temp = [...carrito];
+        
+        if (temp[pos].cantidad > 1) {
+
+            temp[pos].cantidad--;
+
+            // updating the list
+            setCarrito(temp);
+        }
+    };
+
     const funBuscarCliente = async (e) => {
         e.preventDefault();
 
@@ -99,18 +120,18 @@ const PedidoNuevo = () => {
     }
 
     const funGuardarPedido = async () => {
-        if(confirm("¿Está Seguro de Guarar El Pedido?")){
+        if (confirm("¿Está Seguro de Guarar El Pedido?")) {
             try {
                 const datos = {
                     clienteId: cliente_seleccionado.id,
                     items: carrito
                 }
 
-                const {data} = await pedidoService.guardar(datos);
-                if(data.pedido){
+                const { data } = await pedidoService.guardar(datos);
+                if (data.pedido) {
                     // redireccion
                 }
-                
+
             } catch (error) {
                 alert("Ocurrio un error al registrar el pedido");
             }
@@ -144,7 +165,22 @@ const PedidoNuevo = () => {
                                 {carrito.map((prod, index) => (
                                     <tr key={index}>
                                         <td className="py-2 px-4 text-sm text-gray-500">{prod.nombre}</td>
-                                        <td className="py-2 px-4 text-sm text-gray-500">{prod.cantidad}</td>
+                                        <td className="py-2 px-4 text-sm text-gray-500">
+                                            <button
+                                                className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-sm"
+                                                onClick={() => handleDec(index)}
+                                            >
+                                                -
+                                            </button>
+                                            <span className="text-xl font-bold">{prod.cantidad}</span>
+                                            <button
+                                                className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-sm"
+                                                onClick={() => handleInc(index)}
+                                            >
+                                                +
+                                            </button>
+
+                                        </td>
                                         <td className="py-2 px-4 text-sm text-gray-500">{prod.precio}</td>
                                         <td className="py-2 px-4 text-sm text-gray-500">
                                             <button className="py-1 px-2 bg-red-500 text-white hover:bg-red-600 rounded" onClick={() => quitarCarrito(index)}>
